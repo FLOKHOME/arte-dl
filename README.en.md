@@ -49,7 +49,7 @@ arte-dl.py info https://www.arte.tv/de/videos/133131-000-A/ring-das-original/
 
 ### Download
 ```bash
-# Default: 1080p, German audio, to ~/Videos/arte
+# Default: 1080p, German audio, MKV output, to ~/Videos/arte
 arte-dl.py dl 133122-000-A
 
 # Japanese original audio + German subtitles

@@ -254,16 +254,23 @@ def build_spec(token, out_dir=None, max_height=1080, audio="de",
 
     opts = {
         "format": fmt,
-        "merge_output_format": "mp4",
+        "merge_output_format": "mkv",
         "outtmpl": tpl,
         "mtime": False,
         "noprogress": False,
     }
+    pps = [{"key": "FFmpegVideoRemuxer", "preferedformat": "mkv"}]
     if sub_langs:
         opts["writesubtitles"] = True
         opts["subtitleslangs"] = sub_langs
+        opts["embedsubtitles"] = True
         if convert_srt:
             opts["convertsubtitles"] = "srt"
+        pps += [{"key": "FFmpegSubtitlesConvertor", "format": "srt"},
+                {"key": "FFmpegEmbedSubtitle", "already_have_subtitle": True}]
+    pps += [{"key": "FFmpegMetadata"}, {"key": "EmbedThumbnail"}]
+    opts["writethumbnail"] = True
+    opts["postprocessors"] = pps
     if test:
         # API: download_ranges erwartet ein download_range_func-Objekt
         try:
@@ -274,10 +281,11 @@ def build_spec(token, out_dir=None, max_height=1080, audio="de",
             opts.pop("download_ranges", None)
         opts["force_keyframes_at_cuts"] = True
 
-    args = ["--format", fmt, "--merge-output-format", "mp4",
+    args = ["--format", fmt, "--merge-output-format", "mkv", "--remux-video", "mkv",
             "--output", tpl, "--newline", "--no-mtime", url]
     if sub_langs:
-        args += ["--write-subtitles", "--sub-langs", ",".join(sub_langs)]
+        args += ["--write-subtitles", "--sub-langs", ",".join(sub_langs),
+                 "--embed-subs"]
         if convert_srt:
             args += ["--convert-subs", "srt"]
     if test:
