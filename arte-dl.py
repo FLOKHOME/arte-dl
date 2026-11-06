@@ -140,6 +140,57 @@ def parse_program_id(token):
 
 
 def search(query, lang="de"):
+    """Suche über die emac-v4-API (SSR der Suchseite ist unzuverlässig)."""
+    results, seen = [], set()
+    page = 1
+    while page <= 10:
+        raw = http_get("https://api.arte.tv/api/emac/v4/"
+                       f"{lang}/web/search/results?page={page}"
+                       f"&query={urllib.parse.quote(query)}")
+        try:
+            data = json.loads(raw)
+        except ValueError:
+            break
+        items = []
+        for z in data.get("zones") or []:
+            items += (z.get("content") or {}).get("data") or []
+        if not items:
+            break
+        new = 0
+        for it in items:
+            pid = it.get("programId") or ""
+            if not re.fullmatch(r"\d{6}-[0-9A-Z]{2,3}-[A-Z]", pid):
+                continue                    # Sammlungen/Serien ohne Video
+            if pid in seen:
+                continue
+            seen.add(pid)
+            new += 1
+            results.append({
+                "id": pid,
+                "title": (it.get("title") or "").strip(),
+                "subtitle": (it.get("subtitle") or "").strip(),
+                "desc": (it.get("shortDescription") or "").strip()[:120],
+                "kind": ((it.get("kind") or {}).get("label") or "").strip(),
+                "url": f"https://www.arte.tv/{lang}/videos/{pid}/",
+            })
+        if new == 0:
+            break
+        pages = 1
+        for z in data.get("zones") or []:
+            pg = (z.get("content") or {}).get("pagination") or {}
+            try:
+                pages = max(pages, int(pg.get("pages") or 1))
+            except (TypeError, ValueError):
+                pass
+        page += 1
+        if page > pages:
+            break
+    if not results:
+        return _search_html(query, lang)   # Fallback: HTML der Suchseite
+    return results
+
+
+def _search_html(query, lang="de"):
     page = http_get(f"https://www.arte.tv/{lang}/search/?q={urllib.parse.quote(query)}")
     results, seen = [], set()
     for m in CARD_RE.finditer(page):
