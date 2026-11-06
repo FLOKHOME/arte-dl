@@ -1,5 +1,7 @@
 # arte-dl
 
+*Deutsch | [English](README.en.md)*
+
 Filme und Dokus aus der **ARTE Mediathek** per Kommandozeile herunterladen.
 
 ## Windows-EXE (ohne Installation)
